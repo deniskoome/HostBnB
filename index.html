@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HostBnB Admin Panel</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary-color: #007aff;
+        }
+        body {
+            min-height: 100vh;
+            background: #f9fafb; /* Light grey (gray-50) in light mode */
+        }
+        .dark body {
+            background: #1f2937; /* Dark mode unchanged */
+        }
+        #top-bar {
+            background: var(--primary-color); /* #007aff in light mode */
+            color: #ffffff; /* White text */
+        }
+        .dark #top-bar {
+            background: #374151; /* Dark mode unchanged */
+            border-bottom: 1px solid #4b5563;
+        }
+        /* Hide top bar on login page */
+        #login-form:not(.hidden) ~ #top-bar {
+            display: none;
+        }
+        #sidebar {
+            transition: transform 0.3s ease;
+            top: 4rem; /* Below top bar (h-16 = 4rem) */
+        }
+        #sidebar button {
+            transition: background-color 0.3s ease;
+        }
+        button {
+            transition: background-color 0.3s ease;
+        }
+        #profile-dropdown {
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        /* Ensure content doesn’t overlap sidebar/top bar */
+        @media (min-width: 768px) {
+            #content {
+                margin-left: 16rem; /* Matches sidebar w-64 */
+                margin-top: 4rem; /* Below top bar */
+            }
+        }
+        /* Center login form */
+        #login-form {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        /* Prevent modal overlap */
+        #modal {
+            z-index: 1000;
+        }
+        #loading {
+            z-index: 1001;
+        }
+        /* Horizontal scrolling for tables */
+        .table-wrapper {
+            overflow-x: auto;
+            width: 100%;
+            padding-bottom: 1rem; /* Space for scrollbar */
+            background: #ffffff; /* White in light mode */
+        }
+        .dark .table-wrapper {
+            background: #374151; /* Dark mode unchanged */
+        }
+        table {
+            min-width: 100%;
+            width: auto;
+        }
+        td, th {
+            white-space: nowrap; /* Prevent text wrapping */
+        }
+        /* Dashboard card styles */
+        .card {
+            background: var(--primary-color); /* #007aff in light mode */
+            color: #ffffff; /* White text */
+        }
+        .dark .card {
+            background: #374151; /* Dark mode unchanged */
+            color: #d1d5db; /* Gray-200 text */
+        }
+        /* Table text */
+        .table-text {
+            color: #000000; /* Black text in light mode */
+        }
+        .dark .table-text {
+            color: #d1d5db; /* Gray-200 in dark mode */
+        }
+        /* Dark mode styles */
+        .dark .text-gray-800 {
+            color: #d1d5db;
+        }
+        .dark .bg-gray-100 {
+            background: #4b5563;
+        }
+        .dark .hover\:bg-gray-50:hover {
+            background: #4b5563;
+        }
+        .dark .text-gray-600 {
+            color: #9ca3af;
+        }
+        .dark .border-gray-300 {
+            border-color: #6b7280;
+        }
+        .dark .text-gray-700 {
+            color: #d1d5db;
+        }
+    </style>
+</head>
+<body class="font-sans text-gray-800">
+    <div id="top-bar" class="fixed top-0 left-0 w-full h-16 flex items-center justify-between px-6 z-50">
+        <div class="flex items-center space-x-4">
+            <h1 class="text-xl font-bold text-white">HostBnB</h1>
+            <button id="dark-mode-toggle" class="p-2 rounded-md hover:bg-[#005bb5]">
+                <svg id="dark-mode-icon" class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                </svg>
+            </button>
+        </div>
+        <div id="profile-section" class="hidden flex items-center space-x-2">
+            <span id="greeting" class="text-lg font-medium text-white">Hi, Admin</span>
+            <div class="relative">
+                <button id="profile-toggle" class="flex items-center">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 18.879A4.5 4.5 0 0112 15.5c1.68 0 3.174.923 3.879 2.379M15 10a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                </button>
+                <div id="profile-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-lg shadow-lg py-2 z-50">
+                    <button id="logout-button" class="w-full text-left px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900">Logout</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="login-form" class="w-full max-w-md p-8 bg-[var(--primary-color)] rounded-lg shadow-lg text-white">
+        <h2 class="text-2xl font-bold text-center mb-6">Admin Login</h2>
+        <input type="email" id="email" placeholder="Email" required class="w-full p-3 mb-4 border border-white rounded-md focus:outline-none focus:ring-2 focus:ring-white">
+        <input type="password" id="password" placeholder="Password" required class="w-full p-3 mb-4 border border-white rounded-md focus:outline-none focus:ring-2 focus:ring-white">
+        <button id="login-button" class="w-full p-3 bg-white text-[var(--primary-color)] rounded-md hover:bg-gray-200">Login</button>
+    </div>
+    <div id="admin-panel" class="hidden w-full flex">
+        <button id="sidebar-toggle" class="md:hidden fixed top-20 left-4 z-50 p-2 bg-[var(--primary-color)] text-white rounded-md">☰</button>
+        <div id="sidebar" class="fixed left-0 w-64 h-full bg-gray-800 text-white p-6 shadow-lg md:translate-x-0 -translate-x-64">
+            <button id="nav-sidebar-dashboard" class="w-full p-3 text-left rounded-md hover:bg-gray-700 mb-2">Dashboard</button>
+            <button id="nav-sidebar-users" class="w-full p-3 text-left rounded-md hover:bg-gray-700 mb-2">Users</button>
+            <button id="nav-sidebar-listings" class="w-full p-3 text-left rounded-md hover:bg-gray-700 mb-2">Listings</button>
+            <button id="nav-sidebar-bookings" class="w-full p-3 text-left rounded-md hover:bg-gray-700 mb-2">Bookings</button>
+            <button id="nav-sidebar-user_reports" class="w-full p-3 text-left rounded-md hover:bg-gray-700 mb-2">User Reports</button>
+            <button id="nav-sidebar-wallet" class="w-full p-3 text-left rounded-md hover:bg-gray-700 mb-2">Wallets</button>
+            <button id="nav-sidebar-wallet_transactions" class="w-full p-3 text-left rounded-md hover:bg-gray-700 mb-2">Wallet Transactions</button>
+            <button id="nav-sidebar-notifications" class="w-full p-3 text-left rounded-md hover:bg-gray-700 mb-2">Notifications</button>
+        </div>
+        <div id="content" class="flex-1 p-8 w-full"></div>
+    </div>
+    <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div class="bg-[var(--primary-color)] dark:bg-gray-700 p-8 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-lg text-white dark:text-gray-200">
+            <span onclick="closeModal()" class="float-right cursor-pointer text-2xl">&times;</span>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+    <div id="loading" class="hidden fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-[var(--primary-color)] dark:bg-gray-700 p-6 rounded-lg shadow-lg text-white">Loading...</div>
+
+    <script>
+        let currentUser = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM fully loaded');
+
+            // Initialize Supabase
+            if (typeof window.supabase === 'undefined') {
+                console.error('Supabase library failed to load from CDN.');
+                alert('Failed to load Supabase library.');
+                return;
+            }
+
+            const supabaseUrl = 'https://lczghvmebxdsjxpepcto.supabase.co';
+            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxjemdodm1lYnhkc2p4cGVwY3RvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5NjcyNzQsImV4cCI6MjA2OTU0MzI3NH0.zcWBX-EngAOJsFXPplKSGJhKcVgf6FfhEGkV2qzd9hk';
+            const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+            if (!supabase) {
+                console.error('Supabase client initialization failed.');
+                alert('Failed to initialize Supabase client.');
+                return;
+            }
+            console.log('Supabase client initialized successfully');
+
+            // Dark mode toggle
+            const darkModeToggle = document.getElementById('dark-mode-toggle');
+            const darkModeIcon = document.getElementById('dark-mode-icon');
+            const isDarkMode = localStorage.getItem('dark-mode') === 'true';
+            if (isDarkMode) {
+                document.documentElement.classList.add('dark');
+                darkModeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>';
+            }
+            darkModeToggle.addEventListener('click', () => {
+                console.log('Dark mode toggle clicked');
+                document.documentElement.classList.toggle('dark');
+                const isDark = document.documentElement.classList.contains('dark');
+                darkModeIcon.innerHTML = isDark
+                    ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>'
+                    : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>';
+                localStorage.setItem('dark-mode', isDark);
+            });
+
+            // Attach login button event listener
+            const loginButton = document.getElementById('login-button');
+            if (loginButton) {
+                console.log('Login button found, attaching event listener');
+                loginButton.addEventListener('click', async () => {
+                    console.log('Login button clicked');
+                    try {
+                        await login();
+                    } catch (error) {
+                        console.error('Unexpected error in login:', error);
+                        alert('An unexpected error occurred during login.');
+                        showLoading(false);
+                    }
+                });
+            } else {
+                console.error('Login button not found in DOM');
+                alert('Login button not found.');
+            }
+
+            // Attach sidebar button event listeners
+            const sections = [
+                { id: 'nav-sidebar-dashboard', handler: showDashboard },
+                { id: 'nav-sidebar-users', handler: () => showSection('users') },
+                { id: 'nav-sidebar-listings', handler: () => showSection('listings') },
+                { id: 'nav-sidebar-bookings', handler: () => showSection('bookings') },
+                { id: 'nav-sidebar-user_reports', handler: () => showSection('user_reports') },
+                { id: 'nav-sidebar-wallet', handler: () => showSection('wallet') },
+                { id: 'nav-sidebar-wallet_transactions', handler: () => showSection('wallet_transactions') },
+                { id: 'nav-sidebar-notifications', handler: () => showSection('notifications') }
+            ];
+
+            sections.forEach(({ id, handler }) => {
+                const button = document.getElementById(id);
+                if (button) {
+                    console.log(`Attaching click event listener to ${id}`);
+                    button.addEventListener('click', () => {
+                        console.log(`Button ${id} clicked`);
+                        try {
+                            handler();
+                        } catch (error) {
+                            console.error(`Error in ${id} handler:`, error);
+                            alert(`Failed to load ${id.replace('nav-sidebar-', '')}: ${error.message}`);
+                        }
+                    });
+                } else {
+                    console.error(`Button ${id} not found in DOM`);
+                    alert(`Button ${id} not found. Please check the HTML structure.`);
+                }
+            });
+
+            // Attach sidebar toggle
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', () => {
+                    console.log('Sidebar toggle clicked');
+                    toggleSidebar();
+                });
+            }
+
+            // Attach profile dropdown toggle
+            const profileToggle = document.getElementById('profile-toggle');
+            if (profileToggle) {
+                profileToggle.addEventListener('click', () => {
+                    console.log('Profile toggle clicked');
+                    toggleProfileDropdown();
+                });
+            }
+
+            // Attach logout button
+            const logoutButton = document.getElementById('logout-button');
+            if (logoutButton) {
+                logoutButton.addEventListener('click', async () => {
+                    console.log('Logout button clicked');
+                    await logout();
+                });
+            }
+
+            let currentPage = 1;
+            const itemsPerPage = 10;
+            let currentData = [];
+            let currentSection = '';
+
+            function setActiveNav(section) {
+                console.log(`Setting active nav for section: ${section}`);
+                document.querySelectorAll('#sidebar button').forEach(el => el.classList.remove('bg-[var(--primary-color)]'));
+                const sidebarBtn = document.getElementById(`nav-sidebar-${section}`);
+                if (sidebarBtn) sidebarBtn.classList.add('bg-[var(--primary-color)]');
+                else console.error(`Sidebar button for ${section} not found`);
+            }
+
+            async function login() {
+                console.log('login() function called');
+                const emailInput = document.getElementById('email');
+                const passwordInput = document.getElementById('password');
+                const email = emailInput.value.trim();
+                const password = passwordInput.value;
+                emailInput.classList.remove('border-red-500');
+                passwordInput.classList.remove('border-red-500');
+                if (!email || !password) {
+                    emailInput.classList.add('border-red-500');
+                    passwordInput.classList.add('border-red-500');
+                    return alert('Email and password are required');
+                }
+                showLoading(true);
+                console.log('Attempting login with email:', email);
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) {
+                    console.error('Login error:', error);
+                    showLoading(false);
+                    return alert(`Login failed: ${error.message}`);
+                }
+                console.log('Login successful, checking admin role...');
+                const user = await checkAdminRole(email);
+                if (user && user.role === 'admin') {
+                    console.log('Admin role confirmed:', user);
+                    currentUser = user;
+                    document.getElementById('greeting').textContent = `Hi, ${user.first_name || 'Admin'}`;
+                    document.getElementById('login-form').classList.add('hidden');
+                    document.getElementById('admin-panel').classList.remove('hidden');
+                    document.getElementById('profile-section').classList.remove('hidden');
+                    document.getElementById('content').classList.remove('ml-0');
+                    document.getElementById('top-bar').classList.remove('hidden');
+                    showDashboard();
+                } else {
+                    console.log('Not an admin or user not found:', user);
+                    alert('Access denied: Admin role required');
+                    await logout();
+                }
+                showLoading(false);
+            }
+
+            async function checkAdminRole(email) {
+                try {
+                    console.log('Checking admin role for email:', email);
+                    const { data, error } = await supabase.from('users').select('*').eq('email', email).single();
+                    if (error) {
+                        console.error('Error checking admin role:', error);
+                        alert(`Error checking role: ${error.message}.`);
+                        return null;
+                    }
+                    console.log('Admin role check result:', data);
+                    return data;
+                } catch (error) {
+                    console.error('Unexpected error in checkAdminRole:', error);
+                    alert('Failed to verify admin role.');
+                    return null;
+                }
+            }
+
+            async function logout() {
+                console.log('logout() function called');
+                showLoading(true);
+                try {
+                    await supabase.auth.signOut();
+                } catch (error) {
+                    console.error('Logout error:', error);
+                }
+                document.getElementById('admin-panel').classList.add('hidden');
+                document.getElementById('login-form').classList.remove('hidden');
+                document.getElementById('profile-section').classList.add('hidden');
+                document.getElementById('content').classList.add('ml-0');
+                document.getElementById('sidebar').classList.remove('show');
+                document.getElementById('top-bar').classList.add('hidden');
+                setActiveNav('');
+                currentUser = null;
+                showLoading(false);
+            }
+
+            function showLoading(show) {
+                console.log('showLoading called with:', show);
+                document.getElementById('loading').classList.toggle('hidden', !show);
+            }
+
+            function toggleSidebar() {
+                console.log('Toggling sidebar');
+                const sidebar = document.getElementById('sidebar');
+                const content = document.getElementById('content');
+                sidebar.classList.toggle('show');
+                content.classList.toggle('ml-0');
+            }
+
+            function toggleProfileDropdown() {
+                console.log('Toggling profile dropdown');
+                const dropdown = document.getElementById('profile-dropdown');
+                dropdown.classList.toggle('hidden');
+            }
+
+            async function showDashboard() {
+                console.log('showDashboard called');
+                currentSection = 'dashboard';
+                setActiveNav('dashboard');
+                showLoading(true);
+                const content = document.getElementById('content');
+                content.innerHTML = `
+                    <h2 class="text-2xl font-bold mb-6 dark:text-white">Dashboard</h2>
+                    <div id="metrics" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                `;
+                await updateMetrics();
+                subscribeToDashboard();
+                showLoading(false);
+            }
+
+            async function updateMetrics() {
+                try {
+                    console.log('Updating dashboard metrics');
+                    const [listings, activeBookings, users, pendingReports, wallets] = await Promise.all([
+                        supabase.from('listings').select('count', { count: 'exact', head: true }),
+                        supabase.from('bookings').select('count', { count: 'exact', head: true }).eq('active', true),
+                        supabase.from('users').select('count', { count: 'exact', head: true }),
+                        supabase.from('user_reports').select('count', { count: 'exact', head: true }).eq('status', 'open'),
+                        supabase.from('wallet').select('balance')
+                    ]);
+                    const totalBalance = wallets.data ? wallets.data.reduce((sum, w) => sum + (w.balance || 0), 0) : 0;
+                    document.getElementById('metrics').innerHTML = `
+                        <div class="card p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
+                            <p class="text-lg font-semibold">Total Listings</p>
+                            <p class="text-2xl">${listings.count || 0}</p>
+                        </div>
+                        <div class="card p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
+                            <p class="text-lg font-semibold">Active Bookings</p>
+                            <p class="text-2xl">${activeBookings.count || 0}</p>
+                        </div>
+                        <div class="card p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
+                            <p class="text-lg font-semibold">Total Users</p>
+                            <p class="text-2xl">${users.count || 0}</p>
+                        </div>
+                        <div class="card p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
+                            <p class="text-lg font-semibold">Pending Reports</p>
+                            <p class="text-2xl">${pendingReports.count || 0}</p>
+                        </div>
+                        <div class="card p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
+                            <p class="text-lg font-semibold">Total Wallet Balance</p>
+                            <p class="text-2xl">$${totalBalance.toFixed(2)}</p>
+                        </div>
+                    `;
+                } catch (error) {
+                    console.error('Error updating metrics:', error);
+                    alert('Failed to load dashboard metrics: ' + error.message);
+                }
+            }
+
+            function subscribeToDashboard() {
+                console.log('Subscribing to dashboard updates');
+                const tables = ['listings', 'bookings', 'users', 'user_reports', 'wallet'];
+                tables.forEach(table => {
+                    supabase.channel(`dashboard-${table}`).on('postgres_changes', { event: '*', schema: 'public', table }, () => {
+                        if (currentSection === 'dashboard') updateMetrics();
+                    }).subscribe();
+                });
+            }
+
+            async function showSection(table) {
+                console.log(`showSection called for table: ${table}`);
+                currentSection = table;
+                setActiveNav(table);
+                showLoading(true);
+                const content = document.getElementById('content');
+                content.innerHTML = `
+                    <h2 class="text-2xl font-bold mb-6 dark:text-white"> ${formatTitle(table)}</h2>
+                    <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                        <input type="text" id="search-${table}" placeholder="Search..." oninput="debounce(() => filterAndPaginate('${table}'), 300)" class="p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]">
+                        <button id="add-${table}" class="p-3 bg-[var(--primary-color)] text-white rounded-md hover:bg-[#005bb5]">Add New</button>
+                        <button id="export-${table}" class="p-3 bg-gray-500 text-white rounded-md hover:bg-gray-600">Export to CSV</button>
+                    </div>
+                    <div class="table-wrapper rounded-lg shadow-lg overflow-x-auto">
+                        <table id="${table}-table" class="min-w-full w-auto">
+                            <thead class="bg-gray-100 dark:bg-gray-600"></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="pagination flex gap-2 mt-4 justify-center" id="pagination-${table}"></div>
+                `;
+                // Attach event listeners for Add and Export buttons
+                document.getElementById(`add-${table}`).addEventListener('click', () => {
+                    console.log(`Add button clicked for ${table}`);
+                    openAddModal(table);
+                });
+                document.getElementById(`export-${table}`).addEventListener('click', () => {
+                    console.log(`Export button clicked for ${table}`);
+                    exportToCSV(table);
+                });
+                try {
+                    console.log(`Verifying table existence: ${table}`);
+                    const { data: tableCheck } = await supabase.from(table).select('id').limit(1);
+                    console.log(`Table ${table} exists, fetching data`);
+                    const { data, error } = await supabase.from(table).select('*').order('created_at', { ascending: false });
+                    if (error) {
+                        console.error(`Error fetching ${table}:`, error);
+                        alert(`Failed to load ${table}: ${error.message}.`);
+                        content.innerHTML += `<p class="text-red-500 mt-4 text-center">Error: ${error.message}</p>`;
+                        showLoading(false);
+                        return;
+                    }
+                    console.log(`Data fetched for ${table}:`, data);
+                    currentData = data || [];
+                    if (currentData.length === 0) {
+                        console.log(`No data found for ${table}`);
+                        content.innerHTML += `<p class="text-gray-600 dark:text-gray-400 mt-4 text-center">No data available in ${table} table.</p>`;
+                    }
+                    renderTable(table, currentData);
+                    filterAndPaginate(table);
+                    subscribeToTable(table);
+                } catch (error) {
+                    console.error(`Unexpected error in showSection for ${table}:`, error);
+                    alert(`Unexpected error loading ${table}: ${error.message}`);
+                    content.innerHTML += `<p class="text-red-500 mt-4 text-center">Unexpected error: ${error.message}</p>`;
+                }
+                showLoading(false);
+            }
+
+            function formatTitle(str) {
+                return str.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            }
+
+            function renderTable(table, data) {
+                console.log(`Rendering table for ${table}, data length: ${data.length}`);
+                const thead = document.querySelector(`#${table}-table thead`);
+                const tbody = document.querySelector(`#${table}-table tbody`);
+                thead.innerHTML = '';
+                tbody.innerHTML = '';
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="100" class="p-4 text-center text-gray-600 dark:text-gray-400">No data available</td></tr>';
+                    renderPagination(table, 0);
+                    return;
+                }
+                const headers = Object.keys(data[0]).filter(h => h !== 'created_at' && h !== 'updated_at');
+                const tr = document.createElement('tr');
+                headers.forEach(h => {
+                    const th = document.createElement('th');
+                    th.className = 'p-4 text-left font-semibold table-text';
+                    th.textContent = formatTitle(h);
+                    tr.appendChild(th);
+                });
+                tr.innerHTML += '<th class="p-4 text-left font-semibold table-text">Actions</th>';
+                thead.appendChild(tr);
+                const start = (currentPage - 1) * itemsPerPage;
+                const end = start + itemsPerPage;
+                const paginatedData = data.slice(start, end);
+                paginatedData.forEach(row => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-gray-50 dark:hover:bg-gray-600';
+                    headers.forEach(h => {
+                        const td = document.createElement('td');
+                        td.className = 'p-4 table-text';
+                        if (h === 'image_urls' && table === 'listings') {
+                            let urls = [];
+                            if (Array.isArray(row[h])) {
+                                urls = row[h];
+                            } else if (typeof row[h] === 'string') {
+                                urls = row[h].split(',');
+                            }
+                            td.innerHTML = urls.length ? urls.map(url => `<img src="${url.trim()}" width="50" alt="image" class="inline-block m-1 rounded">`).join('') : '';
+                        } else {
+                            td.textContent = row[h] !== null && row[h] !== undefined ? row[h] : '';
+                        }
+                        tr.appendChild(td);
+                    });
+                    const actions = document.createElement('td');
+                    actions.className = 'p-4 flex gap-2';
+                    actions.innerHTML = `
+                        <button onclick="openEditModal('${table}', '${row.id}')" class="p-2 bg-white text-[var(--primary-color)] rounded-md hover:bg-gray-200">Edit</button>
+                        <button onclick="deleteItem('${table}', '${row.id}')" class="p-2 bg-red-500 text-white rounded-md hover:bg-red-600">Delete</button>
+                    `;
+                    if (table === 'bookings' && row.cancellation_requested_at && !row.approve_cancellation) {
+                        actions.innerHTML += `<button onclick="approveCancellation('${row.id}')" class="p-2 bg-green-500 text-white rounded-md hover:bg-green-600">Approve Cancellation</button>`;
+                    }
+                    if (table === 'user_reports') {
+                        actions.innerHTML += `
+                            <select onchange="updateStatus('${row.id}', this.value)" class="p-2 border border-gray-300 dark:border-gray-600 rounded-md text-[var(--primary-color)] dark:text-gray-200">
+                                <option value="${row.status}" selected disabled>${row.status}</option>
+                                <option value="open">Open</option>
+                                <option value="resolved">Resolved</option>
+                            </select>
+                        `;
+                    }
+                    if (table === 'notifications') {
+                        actions.innerHTML += `<button onclick="markRead('${row.id}', ${!row.is_read})" class="p-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600">Mark ${row.is_read ? 'Unread' : 'Read'}</button>`;
+                    }
+                    if (table === 'wallet') {
+                        actions.innerHTML += `<button onclick="adjustBalance('${row.id}', '${row.email}')" class="p-2 bg-purple-500 text-white rounded-md hover:bg-purple-600">Adjust Balance</button>`;
+                    }
+                    tr.appendChild(actions);
+                    tbody.appendChild(tr);
+                });
+                renderPagination(table, data.length);
+            }
+
+            function renderPagination(table, totalItems) {
+                console.log(`Rendering pagination for ${table}, total items: ${totalItems}`);
+                const pagination = document.getElementById(`pagination-${table}`);
+                pagination.innerHTML = '';
+                const totalPages = Math.ceil(totalItems / itemsPerPage);
+                if (totalPages <= 1) return;
+                const prevBtn = document.createElement('button');
+                prevBtn.textContent = 'Previous';
+                prevBtn.className = `p-2 rounded-md ${currentPage === 1 ? 'bg-gray-300 cursor-not-allowed' : 'bg-[var(--primary-color)] text-white hover:bg-[#005bb5]'}`;
+                prevBtn.disabled = currentPage === 1;
+                prevBtn.onclick = () => {
+                    if (currentPage > 1) {
+                        currentPage--;
+                        renderTable(table, currentData);
+                    }
+                };
+                pagination.appendChild(prevBtn);
+                for (let i = 1; i <= totalPages; i++) {
+                    const btn = document.createElement('button');
+                    btn.textContent = i;
+                    btn.className = `p-2 rounded-md ${i === currentPage ? 'bg-[var(--primary-color)] text-white' : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500'}`;
+                    btn.onclick = () => {
+                        currentPage = i;
+                        renderTable(table, currentData);
+                    };
+                    pagination.appendChild(btn);
+                }
+                const nextBtn = document.createElement('button');
+                nextBtn.textContent = 'Next';
+                nextBtn.className = `p-2 rounded-md ${currentPage === totalPages ? 'bg-gray-300 cursor-not-allowed' : 'bg-[var(--primary-color)] text-white hover:bg-[#005bb5]'}`;
+                nextBtn.disabled = currentPage === totalPages;
+                nextBtn.onclick = () => {
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                        renderTable(table, currentData);
+                    }
+                };
+                pagination.appendChild(nextBtn);
+            }
+
+            let debounceTimer;
+            function debounce(func, delay) {
+                console.log('Debouncing function call');
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(func, delay);
+            }
+
+            function filterAndPaginate(table) {
+                console.log(`Filtering and paginating for ${table}`);
+                const search = document.getElementById(`search-${table}`);
+                if (!search) {
+                    console.error(`Search input for ${table} not found`);
+                    return;
+                }
+                const searchValue = search.value.toLowerCase();
+                const filtered = currentData.filter(row =>
+                    Object.values(row).some(val => val && val.toString().toLowerCase().includes(searchValue))
+                );
+                currentPage = 1;
+                renderTable(table, filtered);
+            }
+
+            async function openAddModal(table) {
+                console.log(`Opening add modal for ${table}`);
+                const fields = getTableFields(table).filter(f => f !== 'id' && f !== 'created_at' && f !== 'updated_at');
+                let form = `<h3 class="text-xl font-bold mb-4">Add New ${formatTitle(table.slice(0, -1))}</h3><form>`;
+                for (const f of fields) {
+                    const inputType = getInputType(f);
+                    form += `
+                        <label class="block mb-2 font-medium">${formatTitle(f)}</label>
+                        ${inputType === 'textarea' ? `<textarea id="add-${f}" required class="w-full p-3 border border-white dark:border-gray-600 rounded-md"></textarea>` :
+                        inputType === 'checkbox' ? `<input type="checkbox" id="add-${f}" class="h-4 w-4">` :
+                        `<input type="${inputType}" id="add-${f}" required class="w-full p-3 border border-white dark:border-gray-600 rounded-md">`}
+                    `;
+                }
+                form += `<button type="button" onclick="addItem('${table}')" class="mt-4 p-3 bg-white text-[var(--primary-color)] rounded-md hover:bg-gray-200">Submit</button></form>`;
+                if (table === 'notifications') {
+                    const { data: users, error } = await supabase.from('users').select('email');
+                    if (error) {
+                        console.error('Error fetching users for notifications:', error);
+                        return alert(`Error fetching users: ${error.message}`);
+                    }
+                    form = `
+                        <h3 class="text-xl font-bold mb-4">Send Notification</h3>
+                        <form>
+                            <label class="block mb-2 font-medium">Email</label>
+                            <select id="add-email" required class="w-full p-3 border border-white dark:border-gray-600 rounded-md">
+                                ${users.map(u => `<option>${u.email}</option>`).join('')}
+                            </select>
+                            <label class="block mb-2 mt-4 font-medium">Message</label>
+                            <textarea id="add-message" required class="w-full p-3 border border-white dark:border-gray-600 rounded-md"></textarea>
+                            <button type="button" onclick="addItem('notifications')" class="mt-4 p-3 bg-white text-[var(--primary-color)] rounded-md hover:bg-gray-200">Send</button>
+                        </form>
+                    `;
+                }
+                document.getElementById('modal-body').innerHTML = form;
+                document.getElementById('modal').classList.add('flex');
+            }
+
+            async function openEditModal(table, id) {
+                console.log(`Opening edit modal for ${table}, id: ${id}`);
+                const { data: row, error } = await supabase.from(table).select('*').eq('id', id).single();
+                if (error) {
+                    console.error(`Error fetching ${table} data:`, error);
+                    return alert(`Error fetching data: ${error.message}`);
+                }
+                const fields = getTableFields(table).filter(f => f !== 'id' && f !== 'created_at' && f !== 'updated_at');
+                let form = `<h3 class="text-xl font-bold mb-4">Edit ${formatTitle(table.slice(0, -1))}</h3><form>`;
+                for (const f of fields) {
+                    const inputType = getInputType(f);
+                    const value = row[f] ?? '';
+                    form += `
+                        <label class="block mb-2 font-medium">${formatTitle(f)}</label>
+                        ${inputType === 'textarea' ? `<textarea id="edit-${f}" required class="w-full p-3 border border-white dark:border-gray-600 rounded-md">${sanitize(value)}</textarea>` :
+                        inputType === 'checkbox' ? `<input type="checkbox" id="edit-${f}" ${value ? 'checked' : ''} class="h-4 w-4">` :
+                        `<input type="${inputType}" id="edit-${f}" value="${sanitize(value)}" required class="w-full p-3 border border-white dark:border-gray-600 rounded-md">`}
+                    `;
+                }
+                form += `<button type="button" onclick="updateItem('${table}', '${id}')" class="mt-4 p-3 bg-white text-[var(--primary-color)] rounded-md hover:bg-gray-200">Submit</button></form>`;
+                document.getElementById('modal-body').innerHTML = form;
+                document.getElementById('modal').classList.add('flex');
+            }
+
+            function sanitize(value) {
+                const div = document.createElement('div');
+                div.textContent = value;
+                return div.innerHTML;
+            }
+
+            function closeModal() {
+                console.log('Closing modal');
+                document.getElementById('modal').classList.remove('flex');
+            }
+
+            async function addItem(table) {
+                console.log(`Adding item to ${table}`);
+                const fields = getTableFields(table).filter(f => f !== 'id' && f !== 'created_at' && f !== 'updated_at');
+                const insertData = {};
+                for (const f of fields) {
+                    const el = document.getElementById(`add-${f}`);
+                    if (el) {
+                        insertData[f] = getElementValue(el);
+                    }
+                }
+                if (table === 'notifications') {
+                    insertData.email = document.getElementById('add-email').value;
+                    insertData.message = document.getElementById('add-message').value;
+                    insertData.is_read = false;
+                }
+                showLoading(true);
+                const { error } = await supabase.from(table).insert([insertData]);
+                showLoading(false);
+                if (error) {
+                    console.error(`Error adding to ${table}:`, error);
+                    alert(`Failed to add item: ${error.message}`);
+                } else {
+                    closeModal();
+                    showSection(table);
+                }
+            }
+
+            async function updateItem(table, id) {
+                console.log(`Updating item in ${table}, id: ${id}`);
+                const fields = getTableFields(table).filter(f => f !== 'id' && f !== 'created_at' && f !== 'updated_at');
+                const updateData = {};
+                for (const f of fields) {
+                    const el = document.getElementById(`edit-${f}`);
+                    if (el) {
+                        updateData[f] = getElementValue(el);
+                    }
+                }
+                showLoading(true);
+                const { error } = await supabase.from(table).update(updateData).eq('id', id);
+                showLoading(false);
+                if (error) {
+                    console.error(`Error updating ${table}:`, error);
+                    alert(`Failed to update item: ${error.message}`);
+                } else {
+                    closeModal();
+                    showSection(table);
+                }
+            }
+
+            function getElementValue(el) {
+                return el.type === 'checkbox' ? el.checked : el.value;
+            }
+
+            async function deleteItem(table, id) {
+                console.log(`Deleting item from ${table}, id: ${id}`);
+                if (!confirm(`Are you sure you want to delete this ${table.slice(0, -1)}?`)) return;
+                showLoading(true);
+                const { error } = await supabase.from(table).delete().eq('id', id);
+                showLoading(false);
+                if (error) {
+                    console.error(`Error deleting from ${table}:`, error);
+                    alert(`Failed to delete item: ${error.message}`);
+                } else {
+                    showSection(table);
+                }
+            }
+
+            async function approveCancellation(bookingId) {
+                console.log(`Approving cancellation for booking id: ${bookingId}`);
+                const { data: user } = await supabase.auth.getUser();
+                const adminEmail = user?.user?.email || 'admin';
+                showLoading(true);
+                const { error } = await supabase.from('bookings').update({
+                    approve_cancellation: true,
+                    cancellation_approved_by: adminEmail,
+                    active: false,
+                    updated_at: new Date().toISOString()
+                }).eq('id', bookingId);
+                showLoading(false);
+                if (error) {
+                    console.error('Error approving cancellation:', error);
+                    alert(`Failed to approve cancellation: ${error.message}`);
+                } else {
+                    showSection('bookings');
+                }
+            }
+
+            async function updateStatus(reportId, status) {
+                console.log(`Updating status for report id: ${reportId}, new status: ${status}`);
+                showLoading(true);
+                const { error } = await supabase.from('user_reports').update({ status, updated_at: new Date().toISOString() }).eq('id', reportId);
+                showLoading(false);
+                if (error) {
+                    console.error('Error updating report status:', error);
+                    alert(`Failed to update status: ${error.message}`);
+                } else {
+                    showSection('user_reports');
+                }
+            }
+
+            async function markRead(notifId, isRead) {
+                console.log(`Marking notification id: ${notifId} as ${isRead ? 'read' : 'unread'}`);
+                showLoading(true);
+                const { error } = await supabase.from('notifications').update({ is_read: isRead }).eq('id', notifId);
+                showLoading(false);
+                if (error) {
+                    console.error('Error updating notification:', error);
+                    alert(`Failed to update notification: ${error.message}`);
+                } else {
+                    showSection('notifications');
+                }
+            }
+
+            async function adjustBalance(walletId, email) {
+                console.log(`Adjusting balance for wallet id: ${walletId}, email: ${email}`);
+                const amountStr = prompt('Enter adjustment amount (positive to add, negative to subtract):');
+                const amount = parseFloat(amountStr);
+                if (isNaN(amount) || !amount) return alert('Invalid amount');
+                showLoading(true);
+                const { data: wallet, error: fetchError } = await supabase.from('wallet').select('balance').eq('id', walletId).single();
+                if (fetchError) {
+                    showLoading(false);
+                    return alert(`Error fetching wallet: ${fetchError.message}`);
+                }
+                const newBalance = (wallet.balance || 0) + amount;
+                const { error: updateError } = await supabase.from('wallet').update({ balance: newBalance, updated_at: new Date().toISOString() }).eq('id', walletId);
+                if (updateError) {
+                    showLoading(false);
+                    return alert(`Error updating balance: ${updateError.message}`);
+                }
+                const { error: txError } = await supabase.from('wallet_transactions').insert({
+                    email,
+                    type: amount > 0 ? 'deposit' : 'withdrawal',
+                    method: 'admin_adjustment',
+                    amount: Math.abs(amount),
+                    status: 'completed',
+                    date: new Date().toISOString(),
+                    wallet_id: walletId,
+                    counterparty: 'admin'
+                });
+                showLoading(false);
+                if (txError) console.error('Error logging transaction:', txError);
+                showSection('wallet');
+            }
+
+            function getTableFields(table) {
+                const schemas = {
+                    listings: ['unit_type', 'unit_price', 'unit_location', 'unit_description', 'apartment_name', 'house_number', 'floor_number', 'lockbox_code', 'wifi_name', 'wifi_password', 'netflix_passcode', 'restaurant_number', 'liqour_store_number', 'apartment_location_pin', 'special_instructions', 'image_urls', 'email'],
+                    bookings: ['listing_id', 'email', 'check_in_date', 'check_out_date', 'booking_days', 'active', 'total_price', 'cancellation_requested_at', 'cancellation_approved_by', 'approve_cancellation'],
+                    users: ['first_name', 'last_name', 'phone_number', 'email', 'role'],
+                    user_reports: ['email', 'issue', 'status'],
+                    wallet: ['email', 'balance'],
+                    wallet_transactions: ['email', 'type', 'method', 'amount', 'status', 'date', 'wallet_id', 'counterparty'],
+                    notifications: ['email', 'message', 'is_read']
+                };
+                return ['id', 'created_at', 'updated_at', ...(schemas[table] || [])];
+            }
+
+            function getInputType(field) {
+                if (field.includes('date') || field === 'cancellation_requested_at') return 'date';
+                if (field.includes('password') || field.includes('passcode') || field.includes('code')) return 'password';
+                if (field === 'balance' || field === 'amount' || field === 'total_price' || field.includes('number') || field === 'booking_days') return 'number';
+                if (field === 'active' || field === 'is_read' || field === 'approve_cancellation') return 'checkbox';
+                if (field === 'description' || field === 'issue' || field === 'message' || field === 'special_instructions') return 'textarea';
+                if (field === 'email' || field === 'role' || field === 'status' || field === 'type' || field === 'method') return 'text';
+                return 'text';
+            }
+
+            function subscribeToTable(table) {
+                console.log(`Subscribing to table: ${table}`);
+                supabase.channel(table).on('postgres_changes', { event: '*', schema: 'public', table }, () => {
+                    if (currentSection === table) showSection(table);
+                }).subscribe();
+            }
+
+            function exportToCSV(table) {
+                console.log(`Exporting ${table} to CSV`);
+                const rows = document.querySelectorAll(`#${table}-table tr`);
+                let csv = [];
+                rows.forEach((row, index) => {
+                    const cols = Array.from(row.querySelectorAll('td, th')).slice(0, -1).map(cell => `"${cell.textContent.replace(/"/g, '""')}"`);
+                    csv.push(cols.join(','));
+                });
+                const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${table}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+        });
+    </script>
+</body>
+</html>
