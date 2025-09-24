@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="light">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,6 +9,7 @@
     <style>
         :root {
             --primary-color: #007aff;
+            --primary-light: color-mix(in srgb, var(--primary-color) 10%, white);
         }
         body {
             min-height: 100vh;
@@ -22,12 +23,8 @@
             color: #ffffff; /* White text */
         }
         .dark #top-bar {
-            background: #374151; /* Dark mode unchanged */
+            background: #007aff; /* Dark mode unchanged */
             border-bottom: 1px solid #4b5563;
-        }
-        /* Hide top bar on login page */
-        #login-form:not(.hidden) ~ #top-bar {
-            display: none;
         }
         #sidebar {
             transition: transform 0.3s ease;
@@ -96,7 +93,6 @@
         .dark .table-text {
             color: #d1d5db; /* Gray-200 in dark mode */
         }
-        /* Dark mode styles */
         .dark .text-gray-800 {
             color: #d1d5db;
         }
@@ -115,10 +111,127 @@
         .dark .text-gray-700 {
             color: #d1d5db;
         }
+        /* Table header styles */
+        thead {
+            background: var(--primary-color);
+        }
+        thead th {
+            color: #ffffff;
+        }
+        .dark thead {
+            background: var(--primary-color);
+        }
+        .dark thead th {
+            color: #ffffff;
+        }
+        /* Hover styles for table rows */
+        tr:hover {
+            background: var(--primary-color) !important;
+            color: #ffffff !important;
+        }
+        .dark tr:hover {
+            background: var(--primary-color) !important;
+            color: #ffffff !important;
+        }
+        tr:hover .table-text {
+            color: #ffffff !important;
+        }
+        .dark tr:hover .table-text {
+            color: #ffffff !important;
+        }
+        tr:hover select {
+            color: #ffffff !important;
+        }
+        .dark tr:hover select {
+            color: #ffffff !important;
+        }
+        /* Password reveal toggle */
+        #password-container {
+            position: relative;
+        }
+        #password-toggle {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
+        /* Fix page title color in light mode */
+        h2 {
+            color: #000000 !important; /* Black text in light mode */
+        }
+        .dark h2 {
+            color: #ffffff !important; /* White text in dark mode */
+        }
+        /* Search bar styling */
+        #search-users,
+        #search-listings,
+        #search-bookings,
+        #search-user_reports,
+        #search-wallet,
+        #search-wallet_transactions,
+        #search-notifications {
+            background: #ffffff !important; /* White background in light mode */
+            color: #1f2937 !important; /* Dark gray text in light mode (text-gray-800) */
+        }
+        .dark #search-users,
+        .dark #search-listings,
+        .dark #search-bookings,
+        .dark #search-user_reports,
+        .dark #search-wallet,
+        .dark #search-wallet_transactions,
+        .dark #search-notifications {
+            background: #374151 !important; /* Dark mode background */
+            color: #d1d5db !important; /* Light gray text in dark mode (text-gray-200) */
+        }
+        #search-users::placeholder,
+        #search-listings::placeholder,
+        #search-bookings::placeholder,
+        #search-user_reports::placeholder,
+        #search-wallet::placeholder,
+        #search-wallet_transactions::placeholder,
+        #search-notifications::placeholder {
+            color: #6b7280 !important; /* Gray-500 for placeholder in light mode */
+        }
+        .dark #search-users::placeholder,
+        .dark #search-listings::placeholder,
+        .dark #search-bookings::placeholder,
+        .dark #search-user_reports::placeholder,
+        .dark #search-wallet::placeholder,
+        .dark #search-wallet_transactions::placeholder,
+        .dark #search-notifications::placeholder {
+            color: #9ca3af !important; /* Gray-400 for placeholder in dark mode */
+        }
+        /* Circular profile avatar */
+        .profile-avatar {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            background: #e5e7eb; /* Light grey background for avatar */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            color: #374151; /* Dark text for initials */
+            text-transform: uppercase;
+            border: 2px solid #007aff; /* Matches --primary-color */
+        }
+        .dark .profile-avatar {
+            background: #4b5563; /* Dark mode avatar background */
+            color: #d1d5db; /* Light text for initials */
+            border: 2px solid #007aff;
+        }
+        .profile-avatar:hover {
+            background: #d1d5db; /* Slightly darker in light mode */
+            cursor: pointer;
+        }
+        .dark .profile-avatar:hover {
+            background: #6b7280; /* Slightly lighter in dark mode */
+        }
     </style>
 </head>
 <body class="font-sans text-gray-800">
-    <div id="top-bar" class="fixed top-0 left-0 w-full h-16 flex items-center justify-between px-6 z-50">
+    <div id="top-bar" class="fixed top-0 left-0 w-full h-16 flex items-center justify-between px-6 z-50 hidden">
         <div class="flex items-center space-x-4">
             <h1 class="text-xl font-bold text-white">HostBnB</h1>
             <button id="dark-mode-toggle" class="p-2 rounded-md hover:bg-[#005bb5]">
@@ -131,9 +244,7 @@
             <span id="greeting" class="text-lg font-medium text-white">Hi, Admin</span>
             <div class="relative">
                 <button id="profile-toggle" class="flex items-center">
-                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 18.879A4.5 4.5 0 0112 15.5c1.68 0 3.174.923 3.879 2.379M15 10a3 3 0 11-6 0 3 3 0 016 0z"/>
-                    </svg>
+                    <div class="profile-avatar">A</div>
                 </button>
                 <div id="profile-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-lg shadow-lg py-2 z-50">
                     <button id="logout-button" class="w-full text-left px-4 py-2 text-gray-700 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900">Logout</button>
@@ -143,8 +254,16 @@
     </div>
     <div id="login-form" class="w-full max-w-md p-8 bg-[var(--primary-color)] rounded-lg shadow-lg text-white">
         <h2 class="text-2xl font-bold text-center mb-6">Admin Login</h2>
-        <input type="email" id="email" placeholder="Email" required class="w-full p-3 mb-4 border border-white rounded-md focus:outline-none focus:ring-2 focus:ring-white">
-        <input type="password" id="password" placeholder="Password" required class="w-full p-3 mb-4 border border-white rounded-md focus:outline-none focus:ring-2 focus:ring-white">
+        <input type="email" id="email" placeholder="Email" required class="w-full p-3 mb-4 border border-white rounded-md focus:outline-none focus:ring-2 focus:ring-white bg-white text-[var(--primary-color)] placeholder-gray-500">
+        <div id="password-container" class="relative mb-4">
+            <input type="password" id="password" placeholder="Password" required class="w-full p-3 border border-white rounded-md focus:outline-none focus:ring-2 focus:ring-white bg-white text-[var(--primary-color)] placeholder-gray-500">
+            <span id="password-toggle" class="text-gray-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+            </span>
+        </div>
         <button id="login-button" class="w-full p-3 bg-white text-[var(--primary-color)] rounded-md hover:bg-gray-200">Login</button>
     </div>
     <div id="admin-panel" class="hidden w-full flex">
@@ -163,7 +282,7 @@
     </div>
     <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
         <div class="bg-[var(--primary-color)] dark:bg-gray-700 p-8 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-lg text-white dark:text-gray-200">
-            <span onclick="closeModal()" class="float-right cursor-pointer text-2xl">&times;</span>
+            <span class="float-right cursor-pointer text-2xl">&times;</span>
             <div id="modal-body"></div>
         </div>
     </div>
@@ -208,6 +327,17 @@
                     ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>'
                     : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>';
                 localStorage.setItem('dark-mode', isDark);
+            });
+
+            // Password reveal toggle
+            const passwordInput = document.getElementById('password');
+            const passwordToggle = document.getElementById('password-toggle');
+            passwordToggle.addEventListener('click', () => {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                passwordToggle.innerHTML = type === 'password' ?
+                    '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>' :
+                    '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0111.25 19c-2.975 0-5.65-1.3-7.5-3.375m-1.5-1.05A9.954 9.954 0 013 12c0-1.25.225-2.45.638-3.562M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7m-1.5 1.05A9.954 9.954 0 0021 12c0 1.25-.225 2.45-.638 3.562M21.542 12C20.268 16.057 16.478 19 12 19c-4.478 0-8.268-2.943-9.542-7" /></svg>';
             });
 
             // Attach login button event listener
@@ -287,6 +417,59 @@
                 });
             }
 
+            // Attach modal close
+            document.querySelector('#modal .float-right').addEventListener('click', closeModal);
+
+            // Event delegation for dynamic buttons
+            document.addEventListener('click', (e) => {
+                if (e.target.matches('[data-action="edit"]')) {
+                    console.log('Edit button clicked');
+                    const table = e.target.dataset.table;
+                    const id = e.target.dataset.id;
+                    openEditModal(table, id);
+                } else if (e.target.matches('[data-action="delete"]')) {
+                    console.log('Delete button clicked');
+                    const table = e.target.dataset.table;
+                    const id = e.target.dataset.id;
+                    deleteItem(table, id);
+                } else if (e.target.matches('[data-action="approve-cancellation"]')) {
+                    console.log('Approve cancellation button clicked');
+                    const id = e.target.dataset.id;
+                    approveCancellation(id);
+                } else if (e.target.matches('[data-action="mark-read"]')) {
+                    console.log('Mark read button clicked');
+                    const id = e.target.dataset.id;
+                    const isRead = e.target.dataset.isRead === 'true';
+                    markRead(id, !isRead);
+                } else if (e.target.matches('[data-action="adjust-balance"]')) {
+                    console.log('Adjust balance button clicked');
+                    const id = e.target.dataset.id;
+                    const email = e.target.dataset.email;
+                    adjustBalance(id, email);
+                } else if (e.target.matches('[data-action="add-item"]')) {
+                    console.log('Add item button clicked');
+                    const table = e.target.dataset.table;
+                    addItem(table);
+                } else if (e.target.matches('[data-action="update-item"]')) {
+                    console.log('Update item button clicked');
+                    const table = e.target.dataset.table;
+                    const id = e.target.dataset.id;
+                    updateItem(table, id);
+                } else if (e.target.matches('[data-action="discard-modal"]')) {
+                    console.log('Discard modal button clicked');
+                    closeModal();
+                }
+            });
+
+            document.addEventListener('change', (e) => {
+                if (e.target.matches('[data-action="update-status"]')) {
+                    console.log('Update status changed');
+                    const id = e.target.dataset.id;
+                    const status = e.target.value;
+                    updateStatus(id, status);
+                }
+            });
+
             let currentPage = 1;
             const itemsPerPage = 10;
             let currentData = [];
@@ -327,6 +510,8 @@
                     console.log('Admin role confirmed:', user);
                     currentUser = user;
                     document.getElementById('greeting').textContent = `Hi, ${user.first_name || 'Admin'}`;
+                    const profileAvatar = document.querySelector('.profile-avatar');
+                    profileAvatar.textContent = user.first_name ? user.first_name[0].toUpperCase() : 'A';
                     document.getElementById('login-form').classList.add('hidden');
                     document.getElementById('admin-panel').classList.remove('hidden');
                     document.getElementById('profile-section').classList.remove('hidden');
@@ -375,6 +560,8 @@
                 document.getElementById('top-bar').classList.add('hidden');
                 setActiveNav('');
                 currentUser = null;
+                const profileAvatar = document.querySelector('.profile-avatar');
+                profileAvatar.textContent = 'A';
                 showLoading(false);
             }
 
@@ -404,7 +591,7 @@
                 showLoading(true);
                 const content = document.getElementById('content');
                 content.innerHTML = `
-                    <h2 class="text-2xl font-bold mb-6 dark:text-white">Dashboard</h2>
+                    <h2 class="text-2xl font-bold mb-6">Dashboard</h2>
                     <div id="metrics" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                 `;
                 await updateMetrics();
@@ -419,30 +606,30 @@
                         supabase.from('listings').select('count', { count: 'exact', head: true }),
                         supabase.from('bookings').select('count', { count: 'exact', head: true }).eq('active', true),
                         supabase.from('users').select('count', { count: 'exact', head: true }),
-                        supabase.from('user_reports').select('count', { count: 'exact', head: true }).eq('status', 'open'),
+                        supabase.from('user_reports').select('count', { count: 'exact', head: true }).eq('status', 'pending'),
                         supabase.from('wallet').select('balance')
                     ]);
                     const totalBalance = wallets.data ? wallets.data.reduce((sum, w) => sum + (w.balance || 0), 0) : 0;
                     document.getElementById('metrics').innerHTML = `
                         <div class="card p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
                             <p class="text-lg font-semibold">Total Listings</p>
-                            <p class="text-2xl">${listings.count || 0}</p>
+                            <p class="text-2xl">${(listings.count || 0).toLocaleString()}</p>
                         </div>
                         <div class="card p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
                             <p class="text-lg font-semibold">Active Bookings</p>
-                            <p class="text-2xl">${activeBookings.count || 0}</p>
+                            <p class="text-2xl">${(activeBookings.count || 0).toLocaleString()}</p>
                         </div>
                         <div class="card p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
                             <p class="text-lg font-semibold">Total Users</p>
-                            <p class="text-2xl">${users.count || 0}</p>
+                            <p class="text-2xl">${(users.count || 0).toLocaleString()}</p>
                         </div>
                         <div class="card p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
                             <p class="text-lg font-semibold">Pending Reports</p>
-                            <p class="text-2xl">${pendingReports.count || 0}</p>
+                            <p class="text-2xl">${(pendingReports.count || 0).toLocaleString()}</p>
                         </div>
                         <div class="card p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
                             <p class="text-lg font-semibold">Total Wallet Balance</p>
-                            <p class="text-2xl">$${totalBalance.toFixed(2)}</p>
+                            <p class="text-2xl">Ksh ${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                         </div>
                     `;
                 } catch (error) {
@@ -468,21 +655,21 @@
                 showLoading(true);
                 const content = document.getElementById('content');
                 content.innerHTML = `
-                    <h2 class="text-2xl font-bold mb-6 dark:text-white"> ${formatTitle(table)}</h2>
+                    <h2 class="text-2xl font-bold mb-6">${formatTitle(table)}</h2>
                     <div class="flex flex-col sm:flex-row gap-4 mb-6">
-                        <input type="text" id="search-${table}" placeholder="Search..." oninput="debounce(() => filterAndPaginate('${table}'), 300)" class="p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]">
+                        <input type="text" id="search-${table}" placeholder="Search..." class="p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]">
                         <button id="add-${table}" class="p-3 bg-[var(--primary-color)] text-white rounded-md hover:bg-[#005bb5]">Add New</button>
                         <button id="export-${table}" class="p-3 bg-gray-500 text-white rounded-md hover:bg-gray-600">Export to CSV</button>
                     </div>
                     <div class="table-wrapper rounded-lg shadow-lg overflow-x-auto">
                         <table id="${table}-table" class="min-w-full w-auto">
-                            <thead class="bg-gray-100 dark:bg-gray-600"></thead>
+                            <thead class="bg-[var(--primary-color)]"></thead>
                             <tbody></tbody>
                         </table>
                     </div>
                     <div class="pagination flex gap-2 mt-4 justify-center" id="pagination-${table}"></div>
                 `;
-                // Attach event listeners for Add and Export buttons
+                // Attach event listeners for Add, Export, and Search
                 document.getElementById(`add-${table}`).addEventListener('click', () => {
                     console.log(`Add button clicked for ${table}`);
                     openAddModal(table);
@@ -491,6 +678,8 @@
                     console.log(`Export button clicked for ${table}`);
                     exportToCSV(table);
                 });
+                const searchInput = document.getElementById(`search-${table}`);
+                searchInput.addEventListener('input', debounce(() => filterAndPaginate(table), 300));
                 try {
                     console.log(`Verifying table existence: ${table}`);
                     const { data: tableCheck } = await supabase.from(table).select('id').limit(1);
@@ -535,22 +724,26 @@
                     renderPagination(table, 0);
                     return;
                 }
-                const headers = Object.keys(data[0]).filter(h => h !== 'created_at' && h !== 'updated_at');
+                let headers = Object.keys(data[0]).filter(h => h !== 'created_at' && h !== 'updated_at');
+                if (table === 'listings') {
+                    const ordered = ['id', 'email', 'unit_type'];
+                    const rest = headers.filter(h => !ordered.includes(h));
+                    headers = [...ordered, ...rest];
+                }
                 const tr = document.createElement('tr');
                 headers.forEach(h => {
                     const th = document.createElement('th');
-                    th.className = 'p-4 text-left font-semibold table-text';
+                    th.className = 'p-4 text-left font-semibold';
                     th.textContent = formatTitle(h);
                     tr.appendChild(th);
                 });
-                tr.innerHTML += '<th class="p-4 text-left font-semibold table-text">Actions</th>';
+                tr.innerHTML += '<th class="p-4 text-left font-semibold">Actions</th>';
                 thead.appendChild(tr);
                 const start = (currentPage - 1) * itemsPerPage;
                 const end = start + itemsPerPage;
                 const paginatedData = data.slice(start, end);
                 paginatedData.forEach(row => {
                     const tr = document.createElement('tr');
-                    tr.className = 'hover:bg-gray-50 dark:hover:bg-gray-600';
                     headers.forEach(h => {
                         const td = document.createElement('td');
                         td.className = 'p-4 table-text';
@@ -569,359 +762,366 @@
                     });
                     const actions = document.createElement('td');
                     actions.className = 'p-4 flex gap-2';
-                    actions.innerHTML = `
-                        <button onclick="openEditModal('${table}', '${row.id}')" class="p-2 bg-white text-[var(--primary-color)] rounded-md hover:bg-gray-200">Edit</button>
-                        <button onclick="deleteItem('${table}', '${row.id}')" class="p-2 bg-red-500 text-white rounded-md hover:bg-red-600">Delete</button>
-                    `;
+                    let actionsHtml = '';
+                    if (table !== 'wallet' && table !== 'user_reports') {
+                        actionsHtml += `<button data-action="edit" data-table="${table}" data-id="${row.id}" class="p-2 bg-white text-[var(--primary-color)] rounded-md hover:bg-gray-200">Edit</button>`;
+                    }
                     if (table === 'bookings' && row.cancellation_requested_at && !row.approve_cancellation) {
-                        actions.innerHTML += `<button onclick="approveCancellation('${row.id}')" class="p-2 bg-green-500 text-white rounded-md hover:bg-green-600">Approve Cancellation</button>`;
+                        actionsHtml += `<button data-action="approve-cancellation" data-id="${row.id}" class="p-2 bg-[var(--primary-color)] text-white rounded-md hover:bg-[#005bb5]">Approve Cancellation</button>`;
                     }
                     if (table === 'user_reports') {
-                        actions.innerHTML += `
-                            <select onchange="updateStatus('${row.id}', this.value)" class="p-2 border border-gray-300 dark:border-gray-600 rounded-md text-[var(--primary-color)] dark:text-gray-200">
+                        actionsHtml += `
+                            <select data-action="update-status" data-id="${row.id}" class="p-2 border border-gray-300 dark:border-gray-600 rounded-md text-[var(--primary-color)] dark:text-gray-200">
                                 <option value="${row.status}" selected disabled>${row.status}</option>
-                                <option value="open">Open</option>
+                                <option value="pending">Pending</option>
                                 <option value="resolved">Resolved</option>
                             </select>
                         `;
                     }
-                    if (table === 'notifications') {
-                        actions.innerHTML += `<button onclick="markRead('${row.id}', ${!row.is_read})" class="p-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600">Mark ${row.is_read ? 'Unread' : 'Read'}</button>`;
-                    }
                     if (table === 'wallet') {
-                        actions.innerHTML += `<button onclick="adjustBalance('${row.id}', '${row.email}')" class="p-2 bg-purple-500 text-white rounded-md hover:bg-purple-600">Adjust Balance</button>`;
+                        actionsHtml += `<button data-action="adjust-balance" data-id="${row.id || row.email}" data-email="${row.email}" class="p-2 bg-[var(--primary-color)] text-white rounded-md hover:bg-[#005bb5]">Adjust Balance</button>`;
                     }
+                    actionsHtml += `<button data-action="delete" data-table="${table}" data-id="${row.id || row.email}" class="p-2 bg-red-500 text-white rounded-md hover:bg-red-600">Delete</button>`;
+                    actions.innerHTML = actionsHtml;
                     tr.appendChild(actions);
                     tbody.appendChild(tr);
                 });
                 renderPagination(table, data.length);
             }
 
+            function filterAndPaginate(table) {
+                currentPage = 1;
+                const searchInput = document.getElementById(`search-${table}`);
+                const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+                const filteredData = currentData.filter(row => {
+                    return Object.values(row).some(val => {
+                        if (val !== null && val !== undefined) {
+                            let strVal = '';
+                            if (Array.isArray(val)) {
+                                strVal = val.join(' ');
+                            } else if (typeof val === 'object') {
+                                strVal = JSON.stringify(val);
+                            } else {
+                                strVal = val.toString();
+                            }
+                            return strVal.toLowerCase().includes(searchTerm);
+                        }
+                        return false;
+                    });
+                });
+                renderTable(table, filteredData);
+            }
+
             function renderPagination(table, totalItems) {
-                console.log(`Rendering pagination for ${table}, total items: ${totalItems}`);
                 const pagination = document.getElementById(`pagination-${table}`);
                 pagination.innerHTML = '';
                 const totalPages = Math.ceil(totalItems / itemsPerPage);
                 if (totalPages <= 1) return;
-                const prevBtn = document.createElement('button');
-                prevBtn.textContent = 'Previous';
-                prevBtn.className = `p-2 rounded-md ${currentPage === 1 ? 'bg-gray-300 cursor-not-allowed' : 'bg-[var(--primary-color)] text-white hover:bg-[#005bb5]'}`;
-                prevBtn.disabled = currentPage === 1;
-                prevBtn.onclick = () => {
-                    if (currentPage > 1) {
-                        currentPage--;
-                        renderTable(table, currentData);
-                    }
-                };
-                pagination.appendChild(prevBtn);
                 for (let i = 1; i <= totalPages; i++) {
-                    const btn = document.createElement('button');
-                    btn.textContent = i;
-                    btn.className = `p-2 rounded-md ${i === currentPage ? 'bg-[var(--primary-color)] text-white' : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500'}`;
-                    btn.onclick = () => {
+                    const button = document.createElement('button');
+                    button.textContent = i;
+                    button.className = `p-2 rounded-md ${i === currentPage ? 'bg-[var(--primary-color)] text-white' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}`;
+                    button.addEventListener('click', () => {
                         currentPage = i;
-                        renderTable(table, currentData);
-                    };
-                    pagination.appendChild(btn);
+                        filterAndPaginate(table);
+                    });
+                    pagination.appendChild(button);
                 }
-                const nextBtn = document.createElement('button');
-                nextBtn.textContent = 'Next';
-                nextBtn.className = `p-2 rounded-md ${currentPage === totalPages ? 'bg-gray-300 cursor-not-allowed' : 'bg-[var(--primary-color)] text-white hover:bg-[#005bb5]'}`;
-                nextBtn.disabled = currentPage === totalPages;
-                nextBtn.onclick = () => {
-                    if (currentPage < totalPages) {
-                        currentPage++;
-                        renderTable(table, currentData);
-                    }
-                };
-                pagination.appendChild(nextBtn);
             }
 
-            let debounceTimer;
             function debounce(func, delay) {
-                console.log('Debouncing function call');
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(func, delay);
-            }
-
-            function filterAndPaginate(table) {
-                console.log(`Filtering and paginating for ${table}`);
-                const search = document.getElementById(`search-${table}`);
-                if (!search) {
-                    console.error(`Search input for ${table} not found`);
-                    return;
-                }
-                const searchValue = search.value.toLowerCase();
-                const filtered = currentData.filter(row =>
-                    Object.values(row).some(val => val && val.toString().toLowerCase().includes(searchValue))
-                );
-                currentPage = 1;
-                renderTable(table, filtered);
-            }
-
-            async function openAddModal(table) {
-                console.log(`Opening add modal for ${table}`);
-                const fields = getTableFields(table).filter(f => f !== 'id' && f !== 'created_at' && f !== 'updated_at');
-                let form = `<h3 class="text-xl font-bold mb-4">Add New ${formatTitle(table.slice(0, -1))}</h3><form>`;
-                for (const f of fields) {
-                    const inputType = getInputType(f);
-                    form += `
-                        <label class="block mb-2 font-medium">${formatTitle(f)}</label>
-                        ${inputType === 'textarea' ? `<textarea id="add-${f}" required class="w-full p-3 border border-white dark:border-gray-600 rounded-md"></textarea>` :
-                        inputType === 'checkbox' ? `<input type="checkbox" id="add-${f}" class="h-4 w-4">` :
-                        `<input type="${inputType}" id="add-${f}" required class="w-full p-3 border border-white dark:border-gray-600 rounded-md">`}
-                    `;
-                }
-                form += `<button type="button" onclick="addItem('${table}')" class="mt-4 p-3 bg-white text-[var(--primary-color)] rounded-md hover:bg-gray-200">Submit</button></form>`;
-                if (table === 'notifications') {
-                    const { data: users, error } = await supabase.from('users').select('email');
-                    if (error) {
-                        console.error('Error fetching users for notifications:', error);
-                        return alert(`Error fetching users: ${error.message}`);
-                    }
-                    form = `
-                        <h3 class="text-xl font-bold mb-4">Send Notification</h3>
-                        <form>
-                            <label class="block mb-2 font-medium">Email</label>
-                            <select id="add-email" required class="w-full p-3 border border-white dark:border-gray-600 rounded-md">
-                                ${users.map(u => `<option>${u.email}</option>`).join('')}
-                            </select>
-                            <label class="block mb-2 mt-4 font-medium">Message</label>
-                            <textarea id="add-message" required class="w-full p-3 border border-white dark:border-gray-600 rounded-md"></textarea>
-                            <button type="button" onclick="addItem('notifications')" class="mt-4 p-3 bg-white text-[var(--primary-color)] rounded-md hover:bg-gray-200">Send</button>
-                        </form>
-                    `;
-                }
-                document.getElementById('modal-body').innerHTML = form;
-                document.getElementById('modal').classList.add('flex');
-            }
-
-            async function openEditModal(table, id) {
-                console.log(`Opening edit modal for ${table}, id: ${id}`);
-                const { data: row, error } = await supabase.from(table).select('*').eq('id', id).single();
-                if (error) {
-                    console.error(`Error fetching ${table} data:`, error);
-                    return alert(`Error fetching data: ${error.message}`);
-                }
-                const fields = getTableFields(table).filter(f => f !== 'id' && f !== 'created_at' && f !== 'updated_at');
-                let form = `<h3 class="text-xl font-bold mb-4">Edit ${formatTitle(table.slice(0, -1))}</h3><form>`;
-                for (const f of fields) {
-                    const inputType = getInputType(f);
-                    const value = row[f] ?? '';
-                    form += `
-                        <label class="block mb-2 font-medium">${formatTitle(f)}</label>
-                        ${inputType === 'textarea' ? `<textarea id="edit-${f}" required class="w-full p-3 border border-white dark:border-gray-600 rounded-md">${sanitize(value)}</textarea>` :
-                        inputType === 'checkbox' ? `<input type="checkbox" id="edit-${f}" ${value ? 'checked' : ''} class="h-4 w-4">` :
-                        `<input type="${inputType}" id="edit-${f}" value="${sanitize(value)}" required class="w-full p-3 border border-white dark:border-gray-600 rounded-md">`}
-                    `;
-                }
-                form += `<button type="button" onclick="updateItem('${table}', '${id}')" class="mt-4 p-3 bg-white text-[var(--primary-color)] rounded-md hover:bg-gray-200">Submit</button></form>`;
-                document.getElementById('modal-body').innerHTML = form;
-                document.getElementById('modal').classList.add('flex');
-            }
-
-            function sanitize(value) {
-                const div = document.createElement('div');
-                div.textContent = value;
-                return div.innerHTML;
-            }
-
-            function closeModal() {
-                console.log('Closing modal');
-                document.getElementById('modal').classList.remove('flex');
-            }
-
-            async function addItem(table) {
-                console.log(`Adding item to ${table}`);
-                const fields = getTableFields(table).filter(f => f !== 'id' && f !== 'created_at' && f !== 'updated_at');
-                const insertData = {};
-                for (const f of fields) {
-                    const el = document.getElementById(`add-${f}`);
-                    if (el) {
-                        insertData[f] = getElementValue(el);
-                    }
-                }
-                if (table === 'notifications') {
-                    insertData.email = document.getElementById('add-email').value;
-                    insertData.message = document.getElementById('add-message').value;
-                    insertData.is_read = false;
-                }
-                showLoading(true);
-                const { error } = await supabase.from(table).insert([insertData]);
-                showLoading(false);
-                if (error) {
-                    console.error(`Error adding to ${table}:`, error);
-                    alert(`Failed to add item: ${error.message}`);
-                } else {
-                    closeModal();
-                    showSection(table);
-                }
-            }
-
-            async function updateItem(table, id) {
-                console.log(`Updating item in ${table}, id: ${id}`);
-                const fields = getTableFields(table).filter(f => f !== 'id' && f !== 'created_at' && f !== 'updated_at');
-                const updateData = {};
-                for (const f of fields) {
-                    const el = document.getElementById(`edit-${f}`);
-                    if (el) {
-                        updateData[f] = getElementValue(el);
-                    }
-                }
-                showLoading(true);
-                const { error } = await supabase.from(table).update(updateData).eq('id', id);
-                showLoading(false);
-                if (error) {
-                    console.error(`Error updating ${table}:`, error);
-                    alert(`Failed to update item: ${error.message}`);
-                } else {
-                    closeModal();
-                    showSection(table);
-                }
-            }
-
-            function getElementValue(el) {
-                return el.type === 'checkbox' ? el.checked : el.value;
-            }
-
-            async function deleteItem(table, id) {
-                console.log(`Deleting item from ${table}, id: ${id}`);
-                if (!confirm(`Are you sure you want to delete this ${table.slice(0, -1)}?`)) return;
-                showLoading(true);
-                const { error } = await supabase.from(table).delete().eq('id', id);
-                showLoading(false);
-                if (error) {
-                    console.error(`Error deleting from ${table}:`, error);
-                    alert(`Failed to delete item: ${error.message}`);
-                } else {
-                    showSection(table);
-                }
-            }
-
-            async function approveCancellation(bookingId) {
-                console.log(`Approving cancellation for booking id: ${bookingId}`);
-                const { data: user } = await supabase.auth.getUser();
-                const adminEmail = user?.user?.email || 'admin';
-                showLoading(true);
-                const { error } = await supabase.from('bookings').update({
-                    approve_cancellation: true,
-                    cancellation_approved_by: adminEmail,
-                    active: false,
-                    updated_at: new Date().toISOString()
-                }).eq('id', bookingId);
-                showLoading(false);
-                if (error) {
-                    console.error('Error approving cancellation:', error);
-                    alert(`Failed to approve cancellation: ${error.message}`);
-                } else {
-                    showSection('bookings');
-                }
-            }
-
-            async function updateStatus(reportId, status) {
-                console.log(`Updating status for report id: ${reportId}, new status: ${status}`);
-                showLoading(true);
-                const { error } = await supabase.from('user_reports').update({ status, updated_at: new Date().toISOString() }).eq('id', reportId);
-                showLoading(false);
-                if (error) {
-                    console.error('Error updating report status:', error);
-                    alert(`Failed to update status: ${error.message}`);
-                } else {
-                    showSection('user_reports');
-                }
-            }
-
-            async function markRead(notifId, isRead) {
-                console.log(`Marking notification id: ${notifId} as ${isRead ? 'read' : 'unread'}`);
-                showLoading(true);
-                const { error } = await supabase.from('notifications').update({ is_read: isRead }).eq('id', notifId);
-                showLoading(false);
-                if (error) {
-                    console.error('Error updating notification:', error);
-                    alert(`Failed to update notification: ${error.message}`);
-                } else {
-                    showSection('notifications');
-                }
-            }
-
-            async function adjustBalance(walletId, email) {
-                console.log(`Adjusting balance for wallet id: ${walletId}, email: ${email}`);
-                const amountStr = prompt('Enter adjustment amount (positive to add, negative to subtract):');
-                const amount = parseFloat(amountStr);
-                if (isNaN(amount) || !amount) return alert('Invalid amount');
-                showLoading(true);
-                const { data: wallet, error: fetchError } = await supabase.from('wallet').select('balance').eq('id', walletId).single();
-                if (fetchError) {
-                    showLoading(false);
-                    return alert(`Error fetching wallet: ${fetchError.message}`);
-                }
-                const newBalance = (wallet.balance || 0) + amount;
-                const { error: updateError } = await supabase.from('wallet').update({ balance: newBalance, updated_at: new Date().toISOString() }).eq('id', walletId);
-                if (updateError) {
-                    showLoading(false);
-                    return alert(`Error updating balance: ${updateError.message}`);
-                }
-                const { error: txError } = await supabase.from('wallet_transactions').insert({
-                    email,
-                    type: amount > 0 ? 'deposit' : 'withdrawal',
-                    method: 'admin_adjustment',
-                    amount: Math.abs(amount),
-                    status: 'completed',
-                    date: new Date().toISOString(),
-                    wallet_id: walletId,
-                    counterparty: 'admin'
-                });
-                showLoading(false);
-                if (txError) console.error('Error logging transaction:', txError);
-                showSection('wallet');
-            }
-
-            function getTableFields(table) {
-                const schemas = {
-                    listings: ['unit_type', 'unit_price', 'unit_location', 'unit_description', 'apartment_name', 'house_number', 'floor_number', 'lockbox_code', 'wifi_name', 'wifi_password', 'netflix_passcode', 'restaurant_number', 'liqour_store_number', 'apartment_location_pin', 'special_instructions', 'image_urls', 'email'],
-                    bookings: ['listing_id', 'email', 'check_in_date', 'check_out_date', 'booking_days', 'active', 'total_price', 'cancellation_requested_at', 'cancellation_approved_by', 'approve_cancellation'],
-                    users: ['first_name', 'last_name', 'phone_number', 'email', 'role'],
-                    user_reports: ['email', 'issue', 'status'],
-                    wallet: ['email', 'balance'],
-                    wallet_transactions: ['email', 'type', 'method', 'amount', 'status', 'date', 'wallet_id', 'counterparty'],
-                    notifications: ['email', 'message', 'is_read']
+                let timer;
+                return (...args) => {
+                    clearTimeout(timer);
+                    timer = setTimeout(() => func(...args), delay);
                 };
-                return ['id', 'created_at', 'updated_at', ...(schemas[table] || [])];
-            }
-
-            function getInputType(field) {
-                if (field.includes('date') || field === 'cancellation_requested_at') return 'date';
-                if (field.includes('password') || field.includes('passcode') || field.includes('code')) return 'password';
-                if (field === 'balance' || field === 'amount' || field === 'total_price' || field.includes('number') || field === 'booking_days') return 'number';
-                if (field === 'active' || field === 'is_read' || field === 'approve_cancellation') return 'checkbox';
-                if (field === 'description' || field === 'issue' || field === 'message' || field === 'special_instructions') return 'textarea';
-                if (field === 'email' || field === 'role' || field === 'status' || field === 'type' || field === 'method') return 'text';
-                return 'text';
             }
 
             function subscribeToTable(table) {
-                console.log(`Subscribing to table: ${table}`);
+                console.log(`Subscribing to ${table} updates`);
                 supabase.channel(table).on('postgres_changes', { event: '*', schema: 'public', table }, () => {
                     if (currentSection === table) showSection(table);
                 }).subscribe();
             }
 
+            function openEditModal(table, id) {
+                console.log(`Opening edit modal for ${table} id ${id}`);
+                const row = currentData.find(r => r.id === id || r.email === id);
+                if (!row) return alert('Item not found');
+                let formHtml = '';
+                Object.keys(row).forEach(key => {
+                    if (key !== 'id' && key !== 'created_at' && key !== 'updated_at') {
+                        const value = Array.isArray(row[key]) ? row[key].join(',') : row[key] || '';
+                        formHtml += `
+                            <div class="mb-4">
+                                <label class="block mb-2">${formatTitle(key)}</label>
+                                <input type="${key.includes('password') ? 'password' : 'text'}" id="edit-${key}" value="${value}" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+                            </div>
+                        `;
+                    }
+                });
+                document.getElementById('modal-body').innerHTML = `
+                    <h2 class="text-2xl font-bold mb-4">Edit ${formatTitle(table)}</h2>
+                    ${formHtml}
+                    <div class="flex gap-2">
+                        <button data-action="update-item" data-table="${table}" data-id="${id}" class="flex-1 p-3 bg-[var(--primary-color)] text-white rounded-md hover:bg-[#005bb5]">Update</button>
+                        <button data-action="discard-modal" class="flex-1 p-3 bg-red-500 text-white rounded-md hover:bg-red-600">Discard</button>
+                    </div>
+                `;
+                document.getElementById('modal').classList.remove('hidden');
+            }
+
+            function openAddModal(table) {
+                console.log(`Opening add modal for ${table}`);
+                let formHtml = '';
+                const fields = getTableFields(table);
+                fields.forEach(field => {
+                    formHtml += `
+                        <div class="mb-4">
+                            <label class="block mb-2">${formatTitle(field)}</label>
+                            <input type="${field.includes('password') ? 'password' : field.includes('email') ? 'email' : 'text'}" id="add-${field}" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)] bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200">
+                        </div>
+                    `;
+                });
+                document.getElementById('modal-body').innerHTML = `
+                    <h2 class="text-2xl font-bold mb-4">Add New ${formatTitle(table)}</h2>
+                    ${formHtml}
+                    <div class="flex gap-2">
+                        <button data-action="add-item" data-table="${table}" class="flex-1 p-3 bg-[var(--primary-color)] text-white rounded-md hover:bg-[#005bb5]">Add</button>
+                        <button data-action="discard-modal" class="flex-1 p-3 bg-red-500 text-white rounded-md hover:bg-red-600">Discard</button>
+                    </div>
+                `;
+                document.getElementById('modal').classList.remove('hidden');
+            }
+
+            function getTableFields(table) {
+                const fieldsMap = {
+                    users: ['email', 'first_name', 'last_name', 'role'],
+                    listings: ['email', 'unit_type', 'title', 'description'],
+                    bookings: ['listing_id', 'guest_email', 'start_date', 'end_date'],
+                    user_reports: ['reporter_email', 'reported_email', 'reason'],
+                    wallet: ['email', 'balance'],
+                    wallet_transactions: ['wallet_id', 'amount', 'type'],
+                    notifications: ['user_email', 'message']
+                };
+                return fieldsMap[table] || [];
+            }
+
+            async function addItem(table) {
+                console.log(`Adding item to ${table}`);
+                showLoading(true);
+                try {
+                    const fields = getTableFields(table);
+                    const newItem = {};
+                    fields.forEach(field => {
+                        const input = document.getElementById(`add-${field}`);
+                        let value = input.value.trim();
+                        if (field === 'image_urls') {
+                            value = value.split(',').map(u => u.trim());
+                        }
+                        newItem[field] = value;
+                    });
+                    const { error } = await supabase.from(table).insert([newItem]);
+                    if (error) {
+                        console.error(`Error adding to ${table}:`, error);
+                        throw new Error(error.message);
+                    }
+                    closeModal();
+                    showSection(table);
+                } catch (error) {
+                    alert(`Failed to add item: ${error.message}`);
+                } finally {
+                    showLoading(false);
+                }
+            }
+
+            async function updateItem(table, id) {
+                console.log(`Updating item in ${table} id ${id}`);
+                showLoading(true);
+                try {
+                    const updates = {};
+                    const row = currentData.find(r => r.id === id || r.email === id);
+                    Object.keys(row).forEach(key => {
+                        if (key !== 'id' && key !== 'created_at' && key !== 'updated_at') {
+                            const input = document.getElementById(`edit-${key}`);
+                            if (input) {
+                                let value = input.value;
+                                if (key === 'image_urls') {
+                                    value = value.split(',').map(u => u.trim());
+                                }
+                                updates[key] = value;
+                            }
+                        }
+                    });
+                    let query = supabase.from(table).update(updates);
+                    if (table === 'wallet') {
+                        query = query.eq('email', id);
+                    } else {
+                        query = query.eq('id', id);
+                    }
+                    const { error } = await query;
+                    if (error) {
+                        console.error(`Error updating ${table}:`, error);
+                        throw new Error(error.message);
+                    }
+                    closeModal();
+                    showSection(table);
+                } catch (error) {
+                    alert(`Failed to update item: ${error.message}`);
+                } finally {
+                    showLoading(false);
+                }
+            }
+
+            async function deleteItem(table, id) {
+                if (!confirm('Are you sure you want to delete this item?')) return;
+                console.log(`Deleting item from ${table} id ${id}`);
+                showLoading(true);
+                try {
+                    let query = supabase.from(table).delete();
+                    if (table === 'wallet') {
+                        query = query.eq('email', id);
+                    } else {
+                        query = query.eq('id', id);
+                    }
+                    const { error } = await query;
+                    if (error) {
+                        console.error(`Error deleting from ${table}:`, error);
+                        throw new Error(error.message);
+                    }
+                    showSection(table);
+                } catch (error) {
+                    alert(`Failed to delete item: ${error.message}`);
+                } finally {
+                    showLoading(false);
+                }
+            }
+
+            async function approveCancellation(id) {
+                console.log(`Approving cancellation for booking id ${id}`);
+                showLoading(true);
+                try {
+                    const { error } = await supabase.from('bookings').update({ approve_cancellation: true }).eq('id', id);
+                    if (error) {
+                        console.error('Error approving cancellation:', error);
+                        throw new Error(error.message);
+                    }
+                    showSection('bookings');
+                } catch (error) {
+                    alert(`Failed to approve cancellation: ${error.message}`);
+                } finally {
+                    showLoading(false);
+                }
+            }
+
+            async function markRead(id, isRead) {
+                console.log(`Marking notification ${id} as ${isRead ? 'read' : 'unread'}`);
+                showLoading(true);
+                try {
+                    const { error } = await supabase.from('notifications').update({ is_read: isRead }).eq('id', id);
+                    if (error) {
+                        console.error('Error marking read:', error);
+                        throw new Error(error.message);
+                    }
+                    showSection('notifications');
+                } catch (error) {
+                    alert(`Failed to mark as read: ${error.message}`);
+                } finally {
+                    showLoading(false);
+                }
+            }
+
+            async function adjustBalance(id, email) {
+                const amount = prompt('Enter amount to adjust (positive to add, negative to subtract):');
+                if (!amount || isNaN(amount)) return alert('Invalid amount');
+                console.log(`Adjusting balance for wallet ${id} by ${amount}`);
+                showLoading(true);
+                try {
+                    const parsedAmount = parseFloat(amount);
+                    const { data: current } = await supabase.from('wallet').select('balance').eq('email', email).single();
+                    const newBalance = (current ? current.balance : 0) + parsedAmount;
+                    const { error: updateError } = await supabase.from('wallet').update({ balance: newBalance }).eq('email', email);
+                    if (updateError) {
+                        console.error('Error adjusting balance:', updateError);
+                        throw new Error(updateError.message);
+                    }
+                    showSection('wallet');
+                } catch (error) {
+                    alert(`Failed to adjust balance: ${error.message}`);
+                } finally {
+                    showLoading(false);
+                }
+            }
+
+            async function updateStatus(id, status) {
+                console.log(`Updating status for report ${id} to ${status}`);
+                showLoading(true);
+                try {
+                    const { error } = await supabase.from('user_reports').update({ status }).eq('id', id);
+                    if (error) {
+                        console.error('Error updating status:', error);
+                        throw new Error(error.message);
+                    }
+                    showSection('user_reports');
+                } catch (error) {
+                    alert(`Failed to update status: ${error.message}`);
+                } finally {
+                    showLoading(false);
+                }
+            }
+
+            function closeModal() {
+                document.getElementById('modal').classList.add('hidden');
+                document.getElementById('modal-body').innerHTML = '';
+            }
+
             function exportToCSV(table) {
                 console.log(`Exporting ${table} to CSV`);
-                const rows = document.querySelectorAll(`#${table}-table tr`);
-                let csv = [];
-                rows.forEach((row, index) => {
-                    const cols = Array.from(row.querySelectorAll('td, th')).slice(0, -1).map(cell => `"${cell.textContent.replace(/"/g, '""')}"`);
-                    csv.push(cols.join(','));
-                });
-                const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${table}.csv`;
-                a.click();
-                URL.revokeObjectURL(url);
+                if (currentData.length === 0) {
+                    alert('No data to export');
+                    return;
+                }
+                const csv = [
+                    Object.keys(currentData[0]).join(','),
+                    ...currentData.map(row => Object.values(row).map(val => {
+                        if (Array.isArray(val)) {
+                            val = val.map(v => String(v).replace(/"/g, '""')).join(';');
+                        } else {
+                            val = val !== null && val !== undefined ? String(val).replace(/"/g, '""') : '';
+                        }
+                        return `"${val}"`;
+                    }).join(','))
+                ].join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `${table}.csv`;
+                link.click();
             }
+
+            // Check for existing session
+            async function checkSession() {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) {
+                    const user = await checkAdminRole(session.user.email);
+                    if (user && user.role === 'admin') {
+                        currentUser = user;
+                        document.getElementById('greeting').textContent = `Hi, ${user.first_name || 'Admin'}`;
+                        const profileAvatar = document.querySelector('.profile-avatar');
+                        profileAvatar.textContent = user.first_name ? user.first_name[0].toUpperCase() : 'A';
+                        document.getElementById('login-form').classList.add('hidden');
+                        document.getElementById('admin-panel').classList.remove('hidden');
+                        document.getElementById('profile-section').classList.remove('hidden');
+                        document.getElementById('content').classList.remove('ml-0');
+                        document.getElementById('top-bar').classList.remove('hidden');
+                        showDashboard();
+                    } else {
+                        await logout();
+                    }
+                }
+            }
+
+            checkSession();
         });
     </script>
 </body>
